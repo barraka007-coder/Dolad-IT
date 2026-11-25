@@ -1,0 +1,42 @@
+name: Release asset metadata
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  metadata:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release metadata v1.0]')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Download current metadata files
+        run: |
+          mkdir -p "$RUNNER_TEMP/release-metadata"
+          gh release download v1.0 --pattern SHA256SUMS.txt --pattern release-info.json --dir "$RUNNER_TEMP/release-metadata"
+      - name: Match the metadata to GitHub's published filename
+        shell: python
+        run: |
+          import json, os, pathlib, subprocess
+          folder = pathlib.Path(os.environ['RUNNER_TEMP']) / 'release-metadata'
+          release = json.loads(subprocess.check_output(['gh', 'api', f"repos/{os.environ['GITHUB_REPOSITORY']}/releases/tags/v1.0"], text=True))
+          executables = [a for a in release['assets'] if a['name'].endswith('.exe')]
+          assert len(executables) == 1
+          exe = executables[0]
+          info = json.loads((folder / 'release-info.json').read_text(encoding='utf-8'))
+          assert exe['digest'] == 'sha256:' + info['sha256']
+          info['executable'] = exe['name']
+          (folder / 'release-info.json').write_text(json.dumps(info, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          (folder / 'SHA256SUMS.txt').write_text(info['sha256'] + '  ' + exe['name'] + '\n', encoding='utf-8')
+      - name: Publish corrected metadata and release notes
+        run: |
+          gh release upload v1.0 "$RUNNER_TEMP/release-metadata/SHA256SUMS.txt" "$RUNNER_TEMP/release-metadata/release-info.json" --clobber
+          gh release edit v1.0 --notes-file docs/releases/v1.0.md

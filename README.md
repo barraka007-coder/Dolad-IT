@@ -10,7 +10,7 @@ Obraz videa se kopíruje bez nové komprese. Všechno běží lokálně a offlin
 **Aktuální vydání: `v1.0` — 1.0.0 Alpha 1 (`1.0.0a1`).**
 Jde o předběžnou verzi. Před první větší dávkou si poslechni ukázku.
 
-[Stáhnout EXE pro Windows](https://github.com/barraka007-coder/Dolad-IT/releases/download/v1.0/Dola%C4%8F-IT-Alpha.exe)
+[Stáhnout EXE pro Windows](https://github.com/barraka007-coder/Dolad-IT/releases/download/v1.0/Dolad-IT-Alpha.exe)
 · [Vydání v1.0](https://github.com/barraka007-coder/Dolad-IT/releases/tag/v1.0)
 · [Co obsahuje tato verze](docs/releases/v1.0.md)
 
@@ -54,7 +54,7 @@ jako AAC 192 kb/s mono nebo 256 kb/s stereo; WAV používá 24bit PCM a MP3 kode
 ## Nejrychlejší spuštění
 
 1. Z [vydání v1.0](https://github.com/barraka007-coder/Dolad-IT/releases/tag/v1.0)
-   stáhni **`Dolaď-IT-Alpha.exe`**.
+   stáhni **`Dolad-IT-Alpha.exe`** (název přílohy na GitHubu je bez diakritiky).
 2. Spusť EXE. Obsahuje Python, Qt, FFmpeg i FFprobe; nic dalšího se neinstaluje.
 3. Vyber různé vstupní a výstupní složky.
 4. Začni presetem **Přirozený**, načti soubory a poslechni si ukázku.
