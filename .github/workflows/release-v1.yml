@@ -36,17 +36,14 @@ jobs:
           cache: pip
       - name: Install build and test dependencies
         run: python -m pip install -r requirements-lock.txt
-      - name: Download and verify FFmpeg full build
+      - name: Download and verify pinned FFmpeg build
         run: |
           $ErrorActionPreference = 'Stop'
-          $archive = Join-Path $env:RUNNER_TEMP 'ffmpeg-full.7z'
-          $extract = Join-Path $env:RUNNER_TEMP 'ffmpeg-full'
-          $url = 'https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-full.7z'
-          Invoke-WebRequest -Uri $url -OutFile $archive
-          $sumFile = Join-Path $env:RUNNER_TEMP 'ffmpeg-full.sha256'
-          Invoke-WebRequest -Uri ($url + '.sha256') -OutFile $sumFile
-          $sumText = Get-Content -LiteralPath $sumFile -Raw
-          $expected = [regex]::Match([string]$sumText, '[a-fA-F0-9]{64}').Value
+          $archive = Join-Path $env:RUNNER_TEMP 'ffmpeg-9.0.2.7z'
+          $extract = Join-Path $env:RUNNER_TEMP 'ffmpeg-9.0.2'
+          $url = 'https://github.com/GyanD/codexffmpeg/releases/download/9.0.2/ffmpeg-9.0.2-essentials_build.7z'
+          $expected = '4705843ccaaf54257c16ad90f3e952ece33c17df964ecf7bfdbb0f49c7171077'
+          Invoke-WebRequest -Uri $url -OutFile $archive -MaximumRetryCount 3 -RetryIntervalSec 5 -TimeoutSec 180
           if (-not $expected -or (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash -ne $expected) {
             throw 'FFmpeg archive checksum mismatch.'
           }
