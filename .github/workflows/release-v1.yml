@@ -1,0 +1,100 @@
+name: Windows Alpha v1.0
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-v1.0
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release v1.0]')
+    runs-on: windows-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    env:
+      PYTHONUTF8: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      QT_QPA_PLATFORM: offscreen
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install build and test dependencies
+        run: python -m pip install -r requirements-lock.txt
+      - name: Download and verify FFmpeg full build
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $archive = Join-Path $env:RUNNER_TEMP 'ffmpeg-full.7z'
+          $extract = Join-Path $env:RUNNER_TEMP 'ffmpeg-full'
+          $url = 'https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-full.7z'
+          Invoke-WebRequest -Uri $url -OutFile $archive
+          $sumFile = Join-Path $env:RUNNER_TEMP 'ffmpeg-full.sha256'
+          Invoke-WebRequest -Uri ($url + '.sha256') -OutFile $sumFile
+          $sumText = Get-Content -LiteralPath $sumFile -Raw
+          $expected = [regex]::Match([string]$sumText, '[a-fA-F0-9]{64}').Value
+          if (-not $expected -or (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash -ne $expected) {
+            throw 'FFmpeg archive checksum mismatch.'
+          }
+          7z x $archive "-o$extract" -y | Out-Null
+          if ($LASTEXITCODE -ne 0) { throw 'FFmpeg extraction failed.' }
+          New-Item -ItemType Directory -Force tools/ffmpeg | Out-Null
+          foreach ($name in @('ffmpeg.exe','ffprobe.exe')) {
+            $files = @(Get-ChildItem -LiteralPath $extract -Recurse -File -Filter $name)
+            if ($files.Count -ne 1) { throw "Expected exactly one $name." }
+            Copy-Item -LiteralPath $files[0].FullName -Destination (Join-Path 'tools/ffmpeg' $name)
+          }
+          & tools/ffmpeg/ffmpeg.exe -version
+      - name: Run all functional tests
+        run: python tools/run_tests.py
+      - name: Build standalone Alpha executable
+        run: python tools/build_alpha.py
+      - name: Verify executable metadata and bundled FFmpeg
+        run: python tools/smoke_alpha.py
+      - name: Keep validation reports
+        if: always()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: validation-v1.0
+          path: reports/
+          retention-days: 30
+      - name: Create annotated tag and publish prerelease
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tag = 'v1.0'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git show-ref --verify --quiet "refs/tags/$tag"
+          if ($LASTEXITCODE -eq 0) {
+            $existing = git rev-parse "refs/tags/$tag^{}"
+            if ($existing.Trim() -ne $env:GITHUB_SHA) { throw 'Tag v1.0 already points to a different commit.' }
+          } else {
+            git tag -a $tag -F docs/releases/v1.0.md
+            if ($LASTEXITCODE -ne 0) { throw 'Tag creation failed.' }
+            git push origin "refs/tags/$tag"
+            if ($LASTEXITCODE -ne 0) { throw 'Tag push failed.' }
+          }
+          gh release create $tag --verify-tag --draft --prerelease --title 'Dolaď-IT v1.0 — 1.0.0 Alpha 1' --notes-file docs/releases/v1.0.md
+          if ($LASTEXITCODE -ne 0) { throw 'Release creation failed.' }
+          foreach ($file in Get-ChildItem -LiteralPath release -File) {
+            gh release upload $tag $file.FullName
+            if ($LASTEXITCODE -ne 0) { throw "Upload failed: $($file.Name)" }
+          }
+          gh release edit $tag --draft=false --prerelease --latest=false
+          if ($LASTEXITCODE -ne 0) { throw 'Release publication failed.' }

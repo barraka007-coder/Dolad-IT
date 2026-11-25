@@ -8,7 +8,7 @@ if errorlevel 1 goto failed
 ".venv\Scripts\python.exe" -m pip install -r requirements.txt
 if errorlevel 1 goto failed
 echo.
-echo Instalace dokoncena. Spustte Spustit_Voice_Studio.bat.
+echo Instalace dokoncena. Spustte Spustit_DoladIT.bat.
 pause
 exit /b 0
 :failed

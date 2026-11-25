@@ -6,7 +6,6 @@ Oficiální rozcestník pro Windows: https://ffmpeg.org/download.html#build-wind
 Pro změnu výšky hlasu musí sestava obsahovat filtr rubberband.
 Pro redukci šumu afftdn, pro sykavky deesser.
 
-V tomto pracovním prostředí byly binárky zkopírovány z již dostupné lokální
-sestavy v sousedním projektu VideoEnhancer; za běhu na ně aplikace neodkazuje.
+Tato složka slouží pro běh ze zdrojů a sestavení samostatného EXE.
 Při další distribuci FFmpeg dodržte licenci konkrétní sestavy včetně
 licencí vložených knihoven; konfiguraci vypíše `ffmpeg -version`.

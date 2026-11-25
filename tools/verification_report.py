@@ -15,7 +15,8 @@ def packet_data(tools, path):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("root", nargs="?", default="test-output/pytest-final")
+    parser.add_argument("root", help="Složka vytvořená testy pomocí pytest --basetemp.")
+    parser.add_argument("--output", default="reports/verification.json")
     args = parser.parse_args()
     tools = Tools.find()
     processor = Processor(tools)
@@ -38,7 +39,8 @@ def main():
     preview = next(p for p in root.glob("test_preview_matching_loud*") if p.name[-1].isdigit())
     report["preview_LUFS"] = {name: float(processor.measure(preview / name, 0, "", -16)["input_i"])
                               for name in ("original.wav", "processed.wav")}
-    destination = Path("test-output/verification.json")
+    destination = Path(args.output)
+    destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(report, ensure_ascii=False, indent=2))
 

@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
     QSplitter, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget,
 )
 
+from . import APP_NAME, APP_TITLE, __version__
 from .engine import Job, Media, MediaError, Processor, Tools, run_batch, scan, validate_folders
 from .settings import Store, VoiceSettings
 
@@ -55,7 +56,7 @@ class MainWindow(QMainWindow):
         self.preview_key = None
         self.pending_position = 0
         self.autoplay = False
-        self.setWindowTitle("Dolaď-IT")
+        self.setWindowTitle(APP_TITLE)
         self.resize(1190, 850)
         self.setMinimumSize(930, 700)
         self.audio_output = QAudioOutput(self)
@@ -73,7 +74,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(root)
         layout = QVBoxLayout(root)
         layout.setContentsMargins(20, 16, 20, 16)
-        title = QLabel("Dolaď-IT")
+        title = QLabel(APP_TITLE)
         title.setStyleSheet("font-size: 26px; font-weight: 650; color: #163d45;")
         layout.addWidget(title)
         layout.addWidget(QLabel("Nastavte svůj hlas. Další videa upravíte jedním kliknutím."))
@@ -357,6 +358,7 @@ class MainWindow(QMainWindow):
 
     def tools_ready(self, tools):
         self.tools = tools
+        LOG.info("FFmpeg připraveno: %s", tools.ffmpeg)
         missing = [name for name in ("rubberband", "afftdn", "deesser") if name not in tools.filters]
         self.status.setText("Připraveno · " + str(tools.ffmpeg) + (" · Chybí volitelné filtry: " + ", ".join(missing) if missing else ""))
         self.status.setToolTip(self.status.text())
@@ -614,7 +616,7 @@ class MainWindow(QMainWindow):
     def show_error(self, message):
         dialog = QMessageBox(self)
         dialog.setIcon(QMessageBox.Icon.Warning)
-        dialog.setWindowTitle("Dolaď-IT")
+        dialog.setWindowTitle(APP_NAME)
         dialog.setText(message[:500])
         if len(message) > 500:
             dialog.setDetailedText(message)
@@ -639,7 +641,8 @@ class MainWindow(QMainWindow):
 
 
 def configure_app(app):
-    app.setApplicationName("Dolaď-IT")
+    app.setApplicationName(APP_NAME)
+    app.setApplicationVersion(__version__)
     app.setOrganizationName("VoiceStudio")
     app.setStyle("Fusion")
     app.setStyleSheet("""

@@ -5,4 +5,5 @@ build/
 dist/
 release/
 test-output/
+reports/
 tools/ffmpeg/*.exe
